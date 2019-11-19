@@ -4,6 +4,8 @@
 """
 
 from tqdm import tqdm
+import itertools
+import random
 
 # STORY
 
@@ -315,10 +317,22 @@ def search_users(self, query):
 
 def get_comment(self):
     try:
-        return self.comments_file.random().strip()
+        # return self.comments_file.random().strip()
+        return build_random_comment(self)
     except IndexError:
-        return "Wow!"
+        return "Love this!"
 
+def build_random_comment(self):
+    try:
+        c_list = list(itertools.product(*self.comments_file))
+
+        repl = [("  ", " "), (" .", "."), (" !", "!")]
+        res = " ".join(random.choice(c_list))
+        for s, r in repl:
+            res = res.replace(s, r)
+        return res.capitalize()
+    except IndexError:
+        return "Love this!"
 
 def get_media_id_from_link(self, link):
     if "instagram.com/p/" not in link:
