@@ -124,7 +124,7 @@ from .bot_unlike import (
 from .bot_video import download_video, upload_video
 
 
-class Bot(object):
+0class Bot(object):
     def __init__(
         self,
         whitelist_file="whitelist.txt",

@@ -5,13 +5,17 @@ import sys
 import threading
 import time
 from glob import glob
-
 import config
 
 sys.path.append(os.path.join(sys.path[0], "../../"))
-import schedule  # noqa: E402
+
+# import schedule  # noqa: E402
 from instabot import Bot, utils  # noqa: E402
 
+
+# ======================================================================
+#   Initialize BOT
+# ======================================================================
 
 bot = Bot(
     comments_file=config.COMMENTS_FILE,
@@ -19,36 +23,41 @@ bot = Bot(
     whitelist_file=config.WHITELIST_FILE,
     friends_file=config.FRIENDS_FILE,
 )
+
 bot.login()
 bot.logger.info("ULTIMATE script. Safe to run 24/7!")
 
-random_user_file = utils.file(config.USERS_FILE)
-random_hashtag_file = utils.file(config.HASHTAGS_FILE)
-photo_captions_file = utils.file(config.PHOTO_CAPTIONS_FILE)
-posted_pic_list = utils.file(config.POSTED_PICS_FILE).list
+# ======================================================================
+#   Read config files (TODO: Replace config files with SQLite DB's)
+# ======================================================================
 
-pics = sorted([
+random_user_file = utils.file(config.USERS_FILE)                #       - List of Users to follow
+random_hashtag_file = utils.file(config.HASHTAGS_FILE)          #       - List of Hastags that need to be followed
+photo_captions_file = utils.file(config.PHOTO_CAPTIONS_FILE)    #       - List of Captions already used
+posted_pic_list = utils.file(config.POSTED_PICS_FILE).list      #       - List of pictures already posted
+
+pics = sorted([                                                 #       - List of picture's paths to post
     os.path.basename(x) for x in glob(config.PICS_PATH + "/*.jpg")
-])
+])  
 
+
+# ======================================================================
+#   Methods
+# ======================================================================
 
 def stats():
     bot.save_user_stats(bot.user_id)
-
 
 def like_hashtags():
     bot.like_hashtag(
         random_hashtag_file.random(), amount=700 // 24
     )
 
-
 def like_timeline():
     bot.like_timeline(amount=300 // 24)
 
-
 def like_followers_from_random_user_file():
     bot.like_followers(random_user_file.random(), nlikes=3)
-
 
 def follow_followers():
     bot.follow_followers(
@@ -56,26 +65,21 @@ def follow_followers():
         nfollows=config.NUMBER_OF_FOLLOWERS_TO_FOLLOW
     )
 
-
 def comment_medias():
     bot.comment_medias(bot.get_timeline_medias())
-
 
 def unfollow_non_followers():
     bot.unfollow_non_followers(
         n_to_unfollows=config.NUMBER_OF_NON_FOLLOWERS_TO_UNFOLLOW
     )
 
-
 def follow_users_from_hashtag_file():
     bot.follow_users(bot.get_hashtag_users(random_hashtag_file.random()))
-
 
 def comment_hashtag():
     hashtag = random_hashtag_file.random()
     bot.logger.info("Commenting on hashtag: " + hashtag)
     bot.comment_hashtag(hashtag)
-
 
 def upload_pictures():  # Automatically post a pic in 'pics' folder
     try:
@@ -131,22 +135,71 @@ def run_threaded(job_fn):
     job_thread.start()
 
 
-schedule.every(1).hour.do(run_threaded, stats)
-schedule.every(8).hours.do(run_threaded, like_hashtags)
-schedule.every(2).hours.do(run_threaded, like_timeline)
-schedule.every(1).days.at("16:00").do(
-    run_threaded, like_followers_from_random_user_file
-)
-schedule.every(2).days.at("11:00").do(run_threaded, follow_followers)
-schedule.every(16).hours.do(run_threaded, comment_medias)
-schedule.every(1).days.at("08:00").do(run_threaded, unfollow_non_followers)
-schedule.every(12).hours.do(run_threaded, follow_users_from_hashtag_file)
-schedule.every(6).hours.do(run_threaded, comment_hashtag)
-schedule.every(1).days.at("21:28").do(run_threaded, upload_pictures)
-schedule.every(4).days.at("07:50").do(
-    run_threaded, put_non_followers_on_blacklist
-)
+# ToDo: 1. to pass a dictionary with [action, action_time]
+#       2. loop through the dictionary and activate the schedule + time
+#       
+#       Benefits: we can start the program via options/config file to
+#       decide what actions to run and when.
+# 
+def set_scheduler():
+    schedule.every(1).hour.do(run_threaded, stats)
+    schedule.every(8).hours.do(run_threaded, like_hashtags)
+    schedule.every(2).hours.do(run_threaded, like_timeline)
+    # schedule.every(1).days.at("16:00").do(
+    #     run_threaded, like_followers_from_random_user_file
+    # )
+    # schedule.every(2).days.at("11:00").do(run_threaded, follow_followers)
+    schedule.every(16).hours.do(run_threaded, comment_medias)
+    schedule.every(1).days.at("08:00").do(run_threaded, unfollow_non_followers)
+    schedule.every(12).hours.do(run_threaded, follow_users_from_hashtag_file)
+    schedule.every(6).hours.do(run_threaded, comment_hashtag)
+    # schedule.every(1).days.at("18:28").do(run_threaded, upload_pictures)
+    schedule.every(4).days.at("07:50").do(
+        run_threaded, put_non_followers_on_blacklist
+    )
 
-while True:
-    schedule.run_pending()
-    time.sleep(1)
+
+# Rafael (01/12/2019) : This option is to run the program via scheduler
+# 
+# set_scheduler()
+# while True:
+#     schedule.run_pending()
+#     time.sleep(1)
+
+bot.unfollow_non_followers
+
+print('This is a test')
+
+bot.upload_photo()
+bot.upload_story_photo()
+bot.upload_video()
+
+bot.block_bots()
+
+bot.comment()
+bot.username()
+
+bot.console_print()
+
+bot.download_photos()
+bot.download_photo()
+bot.download_stories()
+bot.download_video()
+bot.get_user_followers()
+
+bot.filter_medias()
+bot.follow()
+bot.follow_followers()
+bot.follow_following()
+bot.followers()
+bot.following()
+
+bot.get_hashtag_medias()
+bot.get_hashtag_users()
+bot.get_last_user_medias()
+bot.get_locations_from_coordinates()
+bot.get_media_likers()
+bot.get_media_commenters()
+
+
+
